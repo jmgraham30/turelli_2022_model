@@ -23,6 +23,8 @@ library(latex2exp)
 
 theme_set(theme_minimal(base_size=13))
 
+update_geom_defaults("point", list(color = "midnightblue", alpha = 0.8))
+
 source("R/infection_frequency.R")
 ```
 
@@ -40,6 +42,82 @@ $$
 
 ## Implementation
 
+```{r}
+#| eval: false
+
+infection_frequency_step <- function(p_t,F_val,mu_val,sh_val){
+  
+  num_exp <- p_t*F_val*(1-mu_val)
+  den_exp <- 1 + p_t*(F_val - 1 - sh_val) + (p_t^2)*sh_val*(1 - mu_val*F_val)
+  
+  p_t1 <- num_exp/den_exp
+  
+  return(max(0.0,min(p_t1,1.0)))
+  
+}
+```
+
+
+```{r}
+#| eval: false
+
+turelli_iteration <- function(p_val,F_val_m,F_val_CV,
+                              sh_val,mu_val,N){
+  
+  F_val_r <- rnorm(1, mean=log(F_val_m), sd=sqrt(log(F_val_CV^2 + 1))) |>
+    exp()
+  p_star <- infection_frequency_step(p_val, F_val_r, mu_val, sh_val)
+  
+  return(rbinom(1, N, p_star) / N )
+  
+}
+```
+
+
+```{r}
+#| eval: false
+
+turelli_simulation <- function(p_0,F_val_m,F_val_CV,
+                               sh_val,mu_val,N,
+                               max_iter=10^10, thresh = 10^(-8)){
+  
+  gen_i <- 0
+  
+  while (gen_i < max_iter & p_0 > thresh){
+    p_0 <- turelli_iteration(p_0,F_val_m=F_val_m,F_val_CV=F_val_CV,
+                             sh_val=sh_val,mu_val=mu_val,N=N)
+    gen_i <- gen_i + 1
+  }
+  
+  return(gen_i)
+  
+}
+```
+
+
+```{r}
+#| label: fig-sim_example
+#| fig-cap: A single simulation of the Turelli model, here $s_{h} = 0$.
+
+
+p_0 <- 0.4
+F_val_m <- 1.021
+F_val_CV <- 0.4
+
+mu_val <- 0.02
+sh_val <- 0.0
+
+N <- 1000
+
+p <- turelli_simulation_p(p_0,F_val_m,F_val_CV,
+                          sh_val,mu_val,N)
+
+tibble(p=p) |>
+  ggplot(aes(x=1:length(p),y=p)) +
+  geom_point() +
+  ylim(c(0,1)) + 
+  labs(x = "Generation", y = "Frequency of infection")
+```
 
 ## Results
 
