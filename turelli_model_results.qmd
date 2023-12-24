@@ -1,0 +1,83 @@
+---
+title: "Wolbachia Infection Frequency"
+subtitle: "Reproducing Turelli Model Results"
+format: 
+  html:
+    echo: true
+    code-fold: true
+    code-summary: "Show the code"
+    toc: true
+    toc-location: left
+    self-contained: true
+bibliography: turelli_bib.bib
+---
+
+```{r}
+#| message: false
+
+
+library(tidyverse)
+library(ggthemes)
+library(scales)
+library(latex2exp)
+
+theme_set(theme_minimal(base_size=13))
+
+source("R/infection_frequency.R")
+```
+
+## The Model
+
+$$
+p_{t+1} = \frac{p_{t}F(1 - \mu)}{1 + p_{t}(F - 1 - s_{h}) + p_{t}^{2}s_{h}(1 - \mu F)}
+$$
+
+
+$$
+q_{ij} = \left(\begin{array}{c} N \\ j \end{array}\right)(p^{\ast})^{j}(1 - p^{\ast})^{N - j}
+$$
+
+
+## Implementation
+
+
+## Results
+
+```{r}
+#| message: false
+
+# Read in data
+df_1 <- read_csv("model_results/fig_02_data_1.csv")
+df_2 <- read_csv("model_results/fig_02_data_2.csv")
+```
+
+
+
+```{r}
+#| label: fig-first_F
+#| fig-cap: Distribution of persistence times for $Median_{F} = 1.021$.
+
+df_1 |>
+  ggplot(aes(x=t_f)) + 
+  geom_histogram(bins=20,color="white",fill="steelblue") + 
+  scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x))) +
+  labs(x = TeX("$T_{Loss}$"))
+```
+
+
+```{r}
+#| label: fig-second_F
+#| fig-cap: Distribution of persistence times for $Median_{F} = 1.05$.
+
+df_2 |>
+  ggplot(aes(x=t_f)) + 
+  geom_histogram(bins=20,color="white",fill="steelblue") + 
+  scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x))) +
+  labs(x = TeX("$T_{Loss}$"))
+```
+
+
+
+
