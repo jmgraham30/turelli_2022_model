@@ -8,6 +8,7 @@ source("R/mu_model.R")
 
 p_0 <- 0.4
 F_val_m <- 1.021
+mu_m <- 0.02
 
 sh_val <- 0.0
 
@@ -15,15 +16,15 @@ N <- 1000
 
 
 p_val <- p_0
-p_val <- mu_iteration(p_val,F_val_m,
-                           sh_val,N)
+p_val <- mu_iteration(p_val,F_val_m,mu_m,
+                      sh_val,N)
 p_val
 
-mu_simulation(p_0,F_val_m,
-                   sh_val,N)
+mu_simulation(p_0,F_val_m,mu_m,
+              sh_val,N)
 
-p <- mu_simulation_p(p_0,F_val_m,
-                          sh_val,N)
+p <- mu_simulation_p(p_0,F_val_m,mu_m,
+                     sh_val,N)
 
 tibble(p=p) |>
   ggplot(aes(x=1:length(p),y=p)) +
