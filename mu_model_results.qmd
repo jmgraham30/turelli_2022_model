@@ -206,7 +206,7 @@ mu_model_data_avgs |>
   labs(x = TeX("$\\hat{\\sigma}(T_{Loss})$"), y = "Count")
 ```
 
-@fig-fourth shows the distribution of mean of persistence times as the parameters of the random variables $F$ and $\mu$ vary. 
+@fig-fourth shows the distribution of mean of persistence times as the parameters of the random variables $F$ and $\mu$ vary. The different panels correspond to different values of $s_{h}$. The color of the tiles corresponds to the mean of the persistence times.
 
 ```{r}
 #| label: fig-fourth
@@ -223,7 +223,7 @@ mu_model_data_avgs |>
   labs(x = TeX("$Median_{F}$"), y = TeX("$Median_{\\mu}$"), fill = TeX("$\\hat{E}(T_{Loss})$")) 
 ```
 
-@fig-fifth shows the distribution of standard deviation of persistence times as the parameters of the random variables $F$ and $\mu$ vary.
+@fig-fifth shows the distribution of standard deviation of persistence times as the parameters of the random variables $F$ and $\mu$ vary. The different panels correspond to different values of $s_{h}$. The color of the tiles corresponds to the standard deviation of the persistence times.
 
 ```{r}
 #| label: fig-fifth
