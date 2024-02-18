@@ -1,0 +1,278 @@
+---
+title: "Wolbachia Infection Frequency"
+subtitle: "Further Exploration of Parameters"
+format: 
+  html:
+    echo: true
+    code-fold: true
+    code-summary: "Show the code"
+    toc: true
+    toc-location: left
+    self-contained: true
+bibliography: turelli_bib.bib
+---
+
+```{r}
+#| message: false
+
+
+library(tidyverse)
+library(ggthemes)
+library(scales)
+library(latex2exp)
+library(gamlss.dist)
+library(gamlss.inf)
+
+theme_set(theme_minimal(base_size=13))
+
+update_geom_defaults("point", list(color = "midnightblue", alpha = 0.8))
+
+source("R/mu_model.R")
+```
+
+## The Model
+
+From [@turelli2022wolbachia], see also [@turelli2022did].
+
+$$
+\begin{align}
+p_{t+1} &= \frac{p_{t}F(1 - \mu)}{1 + p_{t}(F - 1 - s_{h}) + p_{t}^{2}s_{h}(1 - \mu F)},  \\
+q_{ij} &= \left(\begin{array}{c} N \\ j \end{array}\right)(p^{\ast})^{j}(1 - p^{\ast})^{N - j}. 
+\end{align}
+$$
+
+
+The first equation above is implemented as `infection_frequency_model` in the script `R/mu_model.R`. 
+
+```{r}
+#| eval: false
+
+infection_frequency_model <- function(p_t,F_val,mu_val,sh_val){
+  
+  num_exp <- p_t*F_val*(1-mu_val)
+  den_exp <- 1 + p_t*(F_val - 1 - sh_val) + (p_t^2)*sh_val*(1 - mu_val*F_val)
+  
+  p_t1 <- num_exp/den_exp
+  
+  return(max(0.0,min(p_t1,1.0)))
+  
+}
+```
+
+
+The function `mu_iteration` in the script `R/mu_model.R` implements a time step with both equations above and where $F$ is a lognormal random variable and $\mu$ is a zero-inflated beta random variable implemented in package `gamlss.dist`. 
+
+```{r}
+#| eval: false
+
+mu_iteration <- function(p_val,F_val_m,mu_m,
+                         sh_val,N){
+  
+  F_val_r <- rnorm(1, mean=log(F_val_m), sd=sqrt(log(1.16))) |>
+    exp()
+  mu_val_r = rBEINF0(1, mu = mu_m, sigma = 0.01, nu = 0.95)
+  p_star <- infection_frequency_model(p_val, F_val_r, mu_val_r, sh_val)
+  
+  return(rbinom(1, N, p_star) / N )
+  
+}
+```
+
+### Modeling $\mu$
+
+@fig-mu_dist shows a typical distribution for $\mu$. Here the mean of $\mu$ is taken to be 0.05.
+
+```{r}
+#| label: fig-mu_dist
+#| fig-cap: A typical distribution for $\mu$. Here the mean of $\mu$ is taken to be 0.05.
+#| message: false
+#| warning: false
+
+mu_sample <- tibble(x = rBEINF0(1000, mu = 0.05, sigma = 0.1, nu = 0.95)) 
+
+mu_sample |> 
+  ggplot(aes(x)) +
+  geom_histogram(binwidth=0.01,fill = "steelblue", color = "white") +
+  theme_bw() + 
+  xlim(c(-0.05,1.05))
+```
+
+The function `mu_simulation` in `R/mu_modle.R` runs the simulation for a given set of parameters. 
+
+```{r}
+#| eval: false
+
+mu_simulation <- function(p_0,F_val_m,mu_m,
+                          sh_val,N,
+                          max_iter=10^10, thresh = 10^(-8)){
+  
+  gen_i <- 0
+  
+  while (gen_i < max_iter & p_0 > thresh){
+    p_0 <- mu_iteration(p_0,F_val_m=F_val_m,mu_m,
+                        sh_val=sh_val,N=N)
+    gen_i <- gen_i + 1
+  }
+  
+  return(gen_i)
+  
+}
+```
+
+
+@fig-sim_example shows an example simulation based on `mu_simulation`. For this simulation, we set $s_{h} = 0$. The initial frequency of infection is $p_{0} = 0.4$. The mean of the lognormal distribution for $F$ is $1.021$ and the coefficient of variation is $0.4$.  The effective population size is $N = 1000$.
+
+```{r}
+#| label: fig-sim_example
+#| fig-cap: A single simulation of the model, here $s_{h} = 0$.
+
+
+p_0 <- 0.4
+F_val_m <- 1.021
+
+mu_m <- 0.02
+sh_val <- 0.0
+
+N <- 1000
+
+p <- mu_simulation_p(p_0,F_val_m,mu_m,
+                          sh_val,N)
+
+tibble(p=p) |>
+  ggplot(aes(x=1:length(p),y=p)) +
+  geom_point() +
+  ylim(c(0,1)) + 
+  labs(x = "Generation", y = "Frequency of infection")
+```
+
+## Results
+
+```{r}
+#| message: false
+
+# Read in data
+mu_model_data <- read_csv("model_results/mu_fig_02_data.csv")
+```
+
+@fig-first shows the distribution of persistence times.
+
+```{r}
+#| label: fig-first
+#| fig-cap: Distribution of persistence times.
+#| message: false
+
+mu_model_data |>
+  ggplot(aes(x = t_f)) + 
+  geom_histogram(color="white",fill="steelblue") + 
+  scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x))) + 
+  labs(x = "Persistence time", y = "Count")
+```
+
+
+
+```{r}
+#| include: false
+mu_model_data_avgs <- mu_model_data |>
+  group_by(sh_val,F_val_m,mu_m) |>
+  summarise(t_f_avg = mean(t_f), t_f_sd = sd(t_f), n = n()) 
+```
+
+@fig-second shows the distribution of mean of persistence times where the average is taking over the 25 repetitions for each parameter configuration.
+
+```{r}
+#| label: fig-second
+#| fig-cap: Distribution of mean persistence times.
+#| message: false
+mu_model_data_avgs |>
+  ggplot(aes(x = t_f_avg)) + 
+  geom_histogram(color="white",fill="steelblue") + 
+  scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x))) + 
+  labs(x = TeX("$\\hat{E}(T_{Loss})$"), y = "Count")
+```
+
+@fig-third shows the distribution of standard deviations of persistence times computed over the 25 repetitions for each parameter configuration.
+
+```{r}
+#| label: fig-third
+#| fig-cap: Distribution of standard deviations of persistence times.
+#| message: false
+mu_model_data_avgs |>
+  ggplot(aes(x = t_f_sd)) + 
+  geom_histogram(color="white",fill="steelblue") + 
+  scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x))) + 
+  labs(x = TeX("$\\hat{\\sigma}(T_{Loss})$"), y = "Count")
+```
+
+@fig-fourth shows the distribution of mean of persistence times as the parameters of the random variables $F$ and $\mu$ vary. 
+
+```{r}
+#| label: fig-fourth
+#| fig-cap: Mean persistence times as $\hat{F}$ and $\hat{\mu}$ vary.
+#| message: false
+mu_model_data_avgs |>
+  mutate(sh_val = as.factor(sh_val)) |>
+  ggplot(aes(x = F_val_m, y = mu_m, fill = t_f_avg)) +
+  geom_tile() +
+  scale_fill_gradient(trans = "log10",low = "lightblue", high = "darkblue",
+                      breaks = trans_breaks("log10", function(x) 10^x),
+                      labels = trans_format("log10", math_format(10^.x))) +
+  facet_wrap(~sh_val) + 
+  labs(x = TeX("$Median_{F}$"), y = TeX("$Median_{\\mu}$"), fill = TeX("$\\hat{E}(T_{Loss})$")) 
+```
+
+@fig-fifth shows the distribution of standard deviation of persistence times as the parameters of the random variables $F$ and $\mu$ vary.
+
+```{r}
+#| label: fig-fifth
+#| fig-cap: Standard deviation of persistence times as $\hat{F}$ and $\hat{\mu}$ vary.
+#| message: false
+mu_model_data_avgs |>
+  mutate(sh_val = as.factor(sh_val)) |>
+  ggplot(aes(x = F_val_m, y = mu_m, fill = t_f_sd)) +
+  geom_tile() +
+  scale_fill_gradient(trans = "log10",low = "lightblue", high = "darkblue",
+                      breaks = trans_breaks("log10", function(x) 10^x),
+                      labels = trans_format("log10", math_format(10^.x))) +
+  facet_wrap(~sh_val) + 
+  labs(x = TeX("$Median_{F}$"), y = TeX("$Median_{\\mu}$"), fill = TeX("$\\hat{\\sigma}(T_{Loss})$")) 
+
+```
+
+
+
+## References
+
+::: {#refs}
+:::
+
+
+:::{.callout-tip collapse="true"}
+## Expand for Session Info
+```{r}
+#| echo: false
+
+
+library(sessioninfo)
+# save the session info as an object
+pkg_sesh <- session_info(pkgs = "attached")
+
+# get the quarto version
+quarto_version <- system("quarto --version", intern = TRUE)
+
+# inject the quarto info
+pkg_sesh$platform$quarto <- paste(
+  system("quarto --version", intern = TRUE), 
+  "@", 
+  quarto::quarto_path()
+  )
+
+# print it out
+pkg_sesh
+```
+
+:::
+
+
