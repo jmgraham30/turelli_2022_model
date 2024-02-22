@@ -20,7 +20,8 @@ mu_iteration <- function(p_val,F_val_m,
     #rnorm(1, mean=log(F_val_m), sd=sqrt(log(1.16))) |>
     #exp()
 
-  mu_val_r <- round(rBEINF(1, mu = 0.2, sigma = 0.9, nu = 0.9),2)
+  #mu_val_r <- round(rBEINF(1, mu = 0.2, sigma = 0.9, nu = 0.9),2)
+  mu_val_r <- round(rbeta(1,shape1 = 0.2,shape2 = 0.9),2)
   p_star <- infection_frequency_model(p_val, F_val_r, mu_val_r, sh_val)
   
   return(rbinom(1, N, p_star) / N )
