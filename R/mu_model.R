@@ -1,4 +1,4 @@
-library(gamlss.inf)
+library(gamlss.dist)
 
 infection_frequency_model <- function(p_t,F_val,mu_val,sh_val){
   
@@ -21,7 +21,7 @@ mu_iteration <- function(p_val,F_val_m,
     #exp()
 
   #mu_val_r <- round(rBEINF(1, mu = 0.2, sigma = 0.9, nu = 0.9),2)
-  mu_val_r <- round(rbeta(1,shape1 = 0.2,shape2 = 0.9),2)
+  mu_val_r <- round(rbeta(1,shape1 = 0.08,shape2 = 0.9),2)
   p_star <- infection_frequency_model(p_val, F_val_r, mu_val_r, sh_val)
   
   return(rbinom(1, N, p_star) / N )
@@ -30,7 +30,7 @@ mu_iteration <- function(p_val,F_val_m,
 
 mu_simulation <- function(p_0,F_val_m,
                           sh_val,N,
-                          max_iter=10^4, thresh = 10^(-5)){
+                          max_iter=10^7, thresh = 10^(-8)){
   
   gen_i <- 0
   
@@ -46,7 +46,7 @@ mu_simulation <- function(p_0,F_val_m,
 
 mu_simulation_p <- function(p_0,F_val_m,
                             sh_val,N,
-                            max_iter=10^4, thresh = 10^(-5)){
+                            max_iter=10^7, thresh = 10^(-8)){
   
   gen_i <- 1
   p <- c(p_0)
