@@ -7,23 +7,22 @@ update_geom_defaults("point", list(color = "midnightblue", alpha = 0.8))
 source("R/mu_model.R")
 
 p_0 <- 0.4
-F_val_m <- 1.021
-mu_m <- 0.02
+F_val_m <- 1.5
 
-sh_val <- 0.0
+sh_val <- 0.5
 
 N <- 1000
 
 
 p_val <- p_0
-p_val <- mu_iteration(p_val,F_val_m,mu_m,
+p_val <- mu_iteration(p_val,F_val_m,
                       sh_val,N)
 p_val
 
-mu_simulation(p_0,F_val_m,mu_m,
+mu_simulation(p_0,F_val_m,
               sh_val,N)
 
-p <- mu_simulation_p(p_0,F_val_m,mu_m,
+p <- mu_simulation_p(p_0,F_val_m,
                      sh_val,N)
 
 tibble(p=p) |>
