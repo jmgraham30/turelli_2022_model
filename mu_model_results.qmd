@@ -226,7 +226,58 @@ mu_sample |>
   xlim(c(-0.1,1.1))
 ```
 
+In this case, the mean for $\mu$ is `r mean(mu_sample$x)`.
 
+```{r}
+#| message: false
+
+# Read in data
+mu_model_data_3 <- read_csv("model_results/mu_fig_03_data.csv")
+
+mu_model_data_avgs_3 <- mu_model_data_3 |>
+  group_by(sh_val,F_val_m) |>
+  summarise(t_f_avg = mean(t_f), t_f_sd = sd(t_f), n = n()) 
+```
+
+@fig-first_3 shows the distribution of persistence times.
+
+```{r}
+#| label: fig-first_3
+#| fig-cap: Distribution of persistence times.
+#| message: false
+
+mu_model_data_3 |>
+  ggplot(aes(x = t_f)) + 
+  geom_histogram(color="white",fill="steelblue")  + 
+  labs(x = "Persistence time", y = "Count")
+```
+
+
+@fig-second_3 shows the distribution of mean of persistence times where the average is taking over the 50 repetitions for each parameter configuration.
+
+```{r}
+#| label: fig-second_3
+#| fig-cap: Distribution of mean persistence times.
+#| message: false
+mu_model_data_avgs_3 |>
+  ggplot(aes(x = t_f_sd)) + 
+  geom_histogram(color="white",fill="steelblue") + 
+  labs(x = TeX("$\\hat{E}(T_{Loss})$"), y = "Count")
+```
+
+
+@fig-fourth_3 shows the distribution of mean of persistence times as the parameters of the random variables $F$ and $\mu$ vary. The different panels correspond to different values of $s_{h}$. The color of the tiles corresponds to the mean of the persistence times.
+
+```{r}
+#| label: fig-fourth_3
+#| fig-cap: Mean persistence times as $F$ and $s_h$ vary.
+#| message: false
+mu_model_data_avgs_3 |>
+  ggplot(aes(x = F_val_m, y = sh_val, fill = t_f_avg)) +
+  geom_tile() +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  labs(x = TeX("$F$"), y = TeX("$s_h$"), fill = TeX("$\\hat{E}(T_{Loss})$")) 
+```
 
 ## References
 
