@@ -14,8 +14,6 @@ mu_sample |>
 
 summary(mu_sample)
 
-View(mu_sample)
-
 mu_sample_beta <- tibble(x = rbeta(1000,shape1 = 0.05,shape2 = 0.9)) |>
   mutate(x = round(x,2))
 
@@ -26,7 +24,5 @@ mu_sample_beta |>
   xlim(c(-0.2,1.1))
 
 summary(mu_sample_beta)
-
-View(mu_sample_beta)
 
 

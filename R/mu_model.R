@@ -61,3 +61,53 @@ mu_simulation_p <- function(p_0,F_val_m,
   return(p)
   
 }
+
+mu_iteration_01 <- function(p_val,F_val_m,
+                         sh_val,N){
+  
+  F_val_r <- F_val_m
+  
+  #rnorm(1, mean=log(F_val_m), sd=sqrt(log(1.16))) |>
+  #exp()
+  
+  mu_val_r <- round(rBEINF(1, mu = 0.2, sigma = 0.9, nu = 0.9),2)
+  #mu_val_r <- round(rbeta(1,shape1 = 0.08,shape2 = 0.9),2)
+  p_star <- infection_frequency_model(p_val, F_val_r, mu_val_r, sh_val)
+  
+  return(rbinom(1, N, p_star) / N )
+  
+}
+
+mu_simulation_01 <- function(p_0,F_val_m,
+                          sh_val,N,
+                          max_iter=10^7, thresh = 10^(-8)){
+  
+  gen_i <- 0
+  
+  while (gen_i < max_iter & p_0 > thresh){
+    p_0 <- mu_iteration_01(p_0,F_val_m=F_val_m,
+                        sh_val=sh_val,N=N)
+    gen_i <- gen_i + 1
+  }
+  
+  return(gen_i)
+  
+}
+
+mu_simulation_p_01 <- function(p_0,F_val_m,
+                            sh_val,N,
+                            max_iter=10^7, thresh = 10^(-8)){
+  
+  gen_i <- 1
+  p <- c(p_0)
+  
+  while (gen_i < max_iter & p_0 > thresh){
+    p_0 <- mu_iteration_01(p_0,F_val_m=F_val_m,
+                        sh_val=sh_val,N=N)
+    gen_i <- gen_i + 1
+    p[gen_i] <- p_0 
+  }
+  
+  return(p)
+  
+}
