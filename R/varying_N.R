@@ -13,9 +13,6 @@ N_model_data |>
   ggplot(aes(x = t_f)) + 
   geom_histogram(color="white",fill="steelblue") 
 
-#  scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x),
-#                labels = trans_format("log10", math_format(10^.x)))
-
 N_model_data_avgs <- N_model_data |>
   group_by(F_val_m,sh_val,mu_p,N) |>
   summarise(t_f_avg = mean(t_f), t_f_sd = sd(t_f), n = n()) 
